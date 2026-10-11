@@ -14,8 +14,8 @@ STATIC_DIR = BASE_DIR / "static"
 
 app = FastAPI(
     title="Earth System Trend Detective",
-    version="2.0.0",
-    description="Advanced Earth-system intelligence dashboard for climate signal analysis and investigation.",
+    version="3.0.0",
+    description="NASA Space Apps Challenge dashboard for detecting Earth system trends and communicating climate risk clearly.",
 )
 
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
@@ -26,7 +26,7 @@ def load_dataset() -> dict[str, Any]:
         return json.load(file)
 
 
-def to_float_list(values: list[float]) -> list[float]:
+def to_float_list(values: list[Any]) -> list[float]:
     return [float(v) for v in values]
 
 
@@ -40,175 +40,145 @@ def compute_pct_change(series: list[float]) -> float:
     if len(series) < 2:
         return 0.0
     start, end = series[0], series[-1]
-    if start == 0:
+    if abs(start) < 1e-9:
         return 0.0
     return round(((end - start) / abs(start)) * 100, 2)
 
 
-def average(values: list[float]) -> float:
-    if not values:
-        return 0.0
-    return round(sum(values) / len(values), 3)
-
-
 def classify_signal(metric_name: str, value: float) -> str:
     thresholds = {
-        "temperature_anomaly": (0.9, 1.5),
-        "sea_ice_extent": (-10.0, -25.0),
-        "co2_ppm": (15.0, 30.0),
-        "vegetation_index": (3.0, 8.0),
+        "temperature_anomaly": (0.8, 1.4),
+        "sea_ice_extent": (-10, -25),
+        "co2_ppm": (15, 30),
+        "vegetation_index": (2, 8),
         "fire_risk": (0.5, 1.0),
-        "ocean_heat": (10.0, 25.0),
-        "glacier_mass": (-5.0, -15.0),
+        "ocean_heat": (8, 20),
+        "glacier_mass": (-4, -12),
     }
-    min_threshold, max_threshold = thresholds.get(metric_name, (0.0, 0.0))
-    if value >= max_threshold or value <= min_threshold:
+    lower, upper = thresholds.get(metric_name, (0.0, 0.0))
+    if metric_name in {"temperature_anomaly", "co2_ppm", "vegetation_index", "fire_risk", "ocean_heat"}:
+        if value >= upper:
+            return "high"
+        if value >= lower:
+            return "moderate"
+        return "stable"
+    if value <= lower:
         return "high"
-    if value >= min_threshold or value <= -abs(min_threshold):
+    if value <= upper:
         return "moderate"
     return "stable"
 
 
 def build_summary(region_data: dict[str, Any]) -> list[dict[str, str]]:
-    values = {
-        "temperature": compute_change(region_data["temperature_anomaly"]),
-        "ice": compute_change(region_data["sea_ice_extent"]),
-        "co2": compute_change(region_data["co2_ppm"]),
-        "veg": compute_change(region_data["vegetation_index"]),
-        "fire": compute_change(region_data["fire_risk"]),
-        "ocean": compute_change(region_data["ocean_heat"]),
-    }
-
     return [
         {
             "title": "Temperature signal",
-            "value": f"{values['temperature']:+.2f}°C",
-            "detail": "Peak warming is intensifying and tracked across the long-term record.",
+            "value": f"{compute_change(region_data.get('temperature_anomaly', [])):+.2f}°C",
+            "detail": "Long-term warming is intensifying across the observed period.",
         },
         {
             "title": "Sea ice trend",
-            "value": f"{values['ice']:+.1f}%",
-            "detail": "Sea-ice loss indicates a strong cryosphere response to warming.",
+            "value": f"{compute_change(region_data.get('sea_ice_extent', [])):+.1f}%",
+            "detail": "Changes in ice cover show a measurable cryosphere response to warming.",
         },
         {
             "title": "Atmospheric CO2",
-            "value": f"{values['co2']:+.1f} ppm",
-            "detail": "Carbon accumulation continues to amplify climate forcing.",
+            "value": f"{compute_change(region_data.get('co2_ppm', [])):+.1f} ppm",
+            "detail": "Carbon forcing continues to increase and amplifies climate stress.",
         },
         {
             "title": "Vegetation health",
-            "value": f"{values['veg']:+.1f} index",
-            "detail": "Ecosystem productivity is shifting with changing climate conditions.",
+            "value": f"{compute_change(region_data.get('vegetation_index', [])):+.1f} index",
+            "detail": "Ecosystem productivity responds to persistent climate pressure.",
         },
         {
             "title": "Fire risk",
-            "value": f"{values['fire']:+.2f}",
-            "detail": "Combustion risk is increasing where temperature and moisture stress align.",
+            "value": f"{compute_change(region_data.get('fire_risk', [])):+.2f}",
+            "detail": "Hotter, drier conditions are elevating risk for extreme fire events.",
         },
         {
             "title": "Ocean heat",
-            "value": f"{values['ocean']:+.1f} J/m²",
-            "detail": "Ocean heat content remains an important amplifier of broader climate disruption.",
+            "value": f"{compute_change(region_data.get('ocean_heat', [])):+.1f} J/m²",
+            "detail": "Ocean energy storage remains a key amplifier of climate disruption.",
         },
     ]
 
 
 def build_signal_grid(region_data: dict[str, Any]) -> list[dict[str, Any]]:
-    return [
-        {
-            "metric": "temperature_anomaly",
-            "label": "Surface warming",
-            "value": region_data["temperature_anomaly"][-1],
-            "trend": compute_pct_change(region_data["temperature_anomaly"]),
-            "status": classify_signal("temperature_anomaly", region_data["temperature_anomaly"][-1]),
-        },
-        {
-            "metric": "sea_ice_extent",
-            "label": "Sea-ice cover",
-            "value": region_data["sea_ice_extent"][-1],
-            "trend": compute_pct_change(region_data["sea_ice_extent"]),
-            "status": classify_signal("sea_ice_extent", region_data["sea_ice_extent"][-1] - 100),
-        },
-        {
-            "metric": "co2_ppm",
-            "label": "CO2 concentration",
-            "value": region_data["co2_ppm"][-1],
-            "trend": compute_pct_change(region_data["co2_ppm"]),
-            "status": classify_signal("co2_ppm", region_data["co2_ppm"][-1] - region_data["co2_ppm"][0]),
-        },
-        {
-            "metric": "vegetation_index",
-            "label": "Vegetation index",
-            "value": region_data["vegetation_index"][-1],
-            "trend": compute_pct_change(region_data["vegetation_index"]),
-            "status": classify_signal("vegetation_index", region_data["vegetation_index"][-1] - region_data["vegetation_index"][0]),
-        },
-        {
-            "metric": "fire_risk",
-            "label": "Fire risk",
-            "value": region_data["fire_risk"][-1],
-            "trend": compute_pct_change(region_data["fire_risk"]),
-            "status": classify_signal("fire_risk", region_data["fire_risk"][-1]),
-        },
-        {
-            "metric": "ocean_heat",
-            "label": "Ocean heat",
-            "value": region_data["ocean_heat"][-1],
-            "trend": compute_pct_change(region_data["ocean_heat"]),
-            "status": classify_signal("ocean_heat", region_data["ocean_heat"][-1]),
-        },
-    ]
+    metrics = {
+        "temperature_anomaly": region_data.get("temperature_anomaly", []),
+        "sea_ice_extent": region_data.get("sea_ice_extent", []),
+        "co2_ppm": region_data.get("co2_ppm", []),
+        "vegetation_index": region_data.get("vegetation_index", []),
+        "fire_risk": region_data.get("fire_risk", []),
+        "ocean_heat": region_data.get("ocean_heat", []),
+    }
+    signal_cards = []
+    for metric_name, values in metrics.items():
+        value = values[-1] if values else 0.0
+        trend = compute_pct_change(values)
+        signal_cards.append(
+            {
+                "metric": metric_name,
+                "label": metric_name.replace("_", " ").title(),
+                "value": value,
+                "trend": trend,
+                "status": classify_signal(metric_name, value if metric_name not in {"sea_ice_extent"} else value - 100),
+            }
+        )
+    return signal_cards
 
 
 def build_forecast(region_data: dict[str, Any]) -> dict[str, Any]:
-    last_temp = region_data["temperature_anomaly"][-1]
-    last_co2 = region_data["co2_ppm"][-1]
-    last_ice = region_data["sea_ice_extent"][-1]
-    trajectory = {
+    temp = region_data.get("temperature_anomaly", [])
+    co2 = region_data.get("co2_ppm", [])
+    ice = region_data.get("sea_ice_extent", [])
+    last_temp = temp[-1] if temp else 0.0
+    last_co2 = co2[-1] if co2 else 0.0
+    last_ice = ice[-1] if ice else 100.0
+    projection = {
         "temperature_2030": round(last_temp + 0.8, 2),
-        "co2_2030": round(last_co2 + 32.0, 1),
+        "co2_2030": round(last_co2 + 30.0, 1),
         "sea_ice_2030": round(last_ice - 8.0, 1),
-        "risk_score": round(55 + (last_temp * 18) + (last_co2 - 350) * 0.12, 1),
+        "risk_score": round(55 + (last_temp * 18) + ((last_co2 - 350) * 0.12), 1),
     }
     return {
         "scenario": "warming acceleration",
-        "projection": trajectory,
-        "note": "If current conditions remain consistent, the region is likely to face a sharper surge in climate stress and ecosystem disruption by 2030.",
+        "projection": projection,
+        "note": "If the current trend continues, the region is likely to face more intense heat stress, ecological disruption, and repeated climate extremes by 2030.",
     }
 
 
 def build_story(region_name: str, region_data: dict[str, Any]) -> dict[str, str]:
-    temp_delta = compute_change(region_data["temperature_anomaly"])
-    ice_delta = compute_change(region_data["sea_ice_extent"])
-    co2_delta = compute_change(region_data["co2_ppm"])
-    veg_delta = compute_change(region_data["vegetation_index"])
-
+    temp_delta = compute_change(region_data.get("temperature_anomaly", []))
+    ice_delta = compute_change(region_data.get("sea_ice_extent", []))
+    co2_delta = compute_change(region_data.get("co2_ppm", []))
+    veg_delta = compute_change(region_data.get("vegetation_index", []))
     return {
-        "headline": f"{region_name} shows a coordinated Earth-system disruption pattern.",
+        "headline": f"{region_name} shows a coordinated Earth-system disruption signal.",
         "narrative": (
-            f"Across the record, {region_name} experiences a warming rise of {temp_delta:+.2f}°C, a sea-ice shift of {ice_delta:+.1f}%, and atmospheric CO2 increasing by {co2_delta:+.1f} ppm. "
-            f"Ecosystem health also changes with a vegetation index shift of {veg_delta:+.1f}, suggesting that environmental stress is now influencing both natural systems and the risk of extreme events."
+            f"Between the start and end of the record, {region_name} warms by {temp_delta:+.2f}°C, loses {ice_delta:+.1f}% sea-ice extent, and experiences a CO2 increase of {co2_delta:+.1f} ppm. "
+            f"Vegetation conditions shift by {veg_delta:+.1f} index points, indicating system stress is not isolated to one component but is cascading across the broader Earth system."
         ),
-        "insight": "The strongest evidence points to compounding climate stress: warmer air, diminished ice, elevated carbon, and ecosystem strain are reinforcing one another.",
+        "insight": "The strongest evidence suggests compounding climate pressure: warming, carbon buildup, cryosphere loss, and ecosystem stress reinforce each other over time.",
     }
 
 
 def build_recommendations(region_name: str, region_data: dict[str, Any]) -> list[str]:
-    fire_risk = region_data["fire_risk"][-1]
-    temp = region_data["temperature_anomaly"][-1]
-    ice = region_data["sea_ice_extent"][-1]
-
     recs = [
-        "Prioritize early-warning systems for heat and vegetation stress in vulnerable communities.",
-        "Invest in real-time climate monitoring to detect changing regional trend acceleration.",
-        "Support ecosystem restoration and water management in regions under persistent drying stress.",
+        "Create a calibrated early-warning system for heat stress, vegetation loss, and wildfire activity.",
+        "Prioritize ecological restoration and resilient water infrastructure in the most exposed regions.",
+        "Expand real-time monitoring for cryosphere change, ocean heat, and atmospheric forcing.",
     ]
-    if fire_risk > 1.0:
-        recs.append("Activate elevated wildfire preparedness and community evacuation planning for the highest-risk zones.")
-    if temp > 1.2:
-        recs.append("Deploy heat-health mitigation plans and cooling infrastructure for populations exposed to elevated anomaly risk.")
-    if ice < 85:
-        recs.append("Strengthen cryosphere monitoring and coastal adaptation strategies to account for long-term ice loss.")
+    fire_risk = region_data.get("fire_risk", [])
+    if fire_risk and fire_risk[-1] > 1.0:
+        recs.append("Activate elevated fire-preparedness coordination for communities and land managers in high-risk zones.")
+    temp = region_data.get("temperature_anomaly", [])
+    if temp and temp[-1] > 1.2:
+        recs.append("Deploy heat-health mitigation measures and cooling infrastructure for vulnerable populations.")
+    ice = region_data.get("sea_ice_extent", [])
+    if ice and ice[-1] < 85:
+        recs.append("Strengthen coastal adaptation and cryosphere monitoring strategies to account for persistent ice loss.")
     return recs[:5]
 
 
@@ -219,84 +189,82 @@ async def index() -> FileResponse:
 
 @app.get("/api/health")
 async def health() -> dict[str, str]:
-    return {"status": "ok", "service": "earth-system-trend-detective", "version": "2.0.0"}
+    return {"status": "ok", "service": "earth-system-trend-detective", "version": "3.0.0"}
 
 
 @app.get("/api/regions")
 async def get_regions() -> dict[str, list[str]]:
-    dataset = load_dataset()
-    return {"regions": [entry["name"] for entry in dataset["regions"]]}
+    data = load_dataset()
+    return {"regions": [entry["name"] for entry in data.get("regions", [])]}
 
 
 @app.get("/api/trends")
 async def get_trends(region: str = "Global") -> dict[str, Any]:
-    dataset = load_dataset()
+    data = load_dataset()
     region_name = region.strip()
-
-    target_region = next(
-        (entry for entry in dataset["regions"] if entry["name"].lower() == region_name.lower()),
-        None,
-    )
-    if target_region is None:
+    target = next((entry for entry in data.get("regions", []) if entry.get("name", "").lower() == region_name.lower()), None)
+    if target is None:
         raise HTTPException(status_code=404, detail=f"Region '{region_name}' not found.")
 
+    years = data.get("years", [])
     metrics = {
-        "temperature_anomaly": to_float_list(target_region["temperature_anomaly"]),
-        "sea_ice_extent": to_float_list(target_region["sea_ice_extent"]),
-        "co2_ppm": to_float_list(target_region["co2_ppm"]),
-        "vegetation_index": to_float_list(target_region["vegetation_index"]),
-        "fire_risk": to_float_list(target_region["fire_risk"]),
-        "precipitation_anomaly": to_float_list(target_region["precipitation_anomaly"]),
-        "ocean_heat": to_float_list(target_region["ocean_heat"]),
-        "glacier_mass": to_float_list(target_region["glacier_mass"]),
-        "methane_ppb": to_float_list(target_region["methane_ppb"]),
-        "extreme_events": to_float_list(target_region["extreme_events"]),
+        "temperature_anomaly": to_float_list(target.get("temperature_anomaly", [0.0] * len(years))),
+        "sea_ice_extent": to_float_list(target.get("sea_ice_extent", [100.0] * len(years))),
+        "co2_ppm": to_float_list(target.get("co2_ppm", [0.0] * len(years))),
+        "vegetation_index": to_float_list(target.get("vegetation_index", [0.0] * len(years))),
+        "fire_risk": to_float_list(target.get("fire_risk", [0.0] * len(years))),
+        "precipitation_anomaly": to_float_list(target.get("precipitation_anomaly", [0.0] * len(years))),
+        "ocean_heat": to_float_list(target.get("ocean_heat", [0.0] * len(years))),
+        "glacier_mass": to_float_list(target.get("glacier_mass", [0.0] * len(years))),
+        "methane_ppb": to_float_list(target.get("methane_ppb", [0.0] * len(years))),
+        "extreme_events": to_float_list(target.get("extreme_events", [0.0] * len(years))),
     }
 
     return {
-        "region": target_region["name"],
-        "years": dataset["years"],
+        "region": target["name"],
+        "years": years,
         "metrics": metrics,
-        "summary": build_summary(target_region),
-        "signals": build_signal_grid(target_region),
-        "story": build_story(target_region["name"], target_region),
-        "forecast": build_forecast(target_region),
-        "recommendations": build_recommendations(target_region["name"], target_region),
-        "available_regions": [entry["name"] for entry in dataset["regions"]],
+        "summary": build_summary(target),
+        "signals": build_signal_grid(target),
+        "story": build_story(target["name"], target),
+        "forecast": build_forecast(target),
+        "recommendations": build_recommendations(target["name"], target),
+        "available_regions": [entry["name"] for entry in data.get("regions", [])],
     }
 
 
 @app.get("/api/compare")
 async def compare_regions(regions: str = "Global,Arctic") -> dict[str, Any]:
-    dataset = load_dataset()
-    selected = [item.strip() for item in regions.split(",") if item.strip()]
+    data = load_dataset()
+    names = [item.strip() for item in regions.split(",") if item.strip()]
     matched = []
-    for region_name in selected:
-        match = next((entry for entry in dataset["regions"] if entry["name"].lower() == region_name.lower()), None)
-        if match:
-            matched.append(match)
-
+    for name in names:
+        region = next((entry for entry in data.get("regions", []) if entry.get("name", "").lower() == name.lower()), None)
+        if region is not None:
+            matched.append(region)
     if not matched:
         raise HTTPException(status_code=404, detail="No valid regions were found for comparison.")
 
     comparison = []
     for region in matched:
-        comparison.append({
-            "name": region["name"],
-            "temperature": region["temperature_anomaly"][-1],
-            "ice": region["sea_ice_extent"][-1],
-            "co2": region["co2_ppm"][-1],
-            "vegetation": region["vegetation_index"][-1],
-            "fire": region["fire_risk"][-1],
-        })
+        comparison.append(
+            {
+                "name": region["name"],
+                "temperature": region.get("temperature_anomaly", [0.0])[-1],
+                "ice": region.get("sea_ice_extent", [100.0])[-1],
+                "co2": region.get("co2_ppm", [0.0])[-1],
+                "vegetation": region.get("vegetation_index", [0.0])[-1],
+                "fire": region.get("fire_risk", [0.0])[-1],
+            }
+        )
     return {"regions": comparison}
 
 
 @app.get("/api/forecast")
 async def forecast(region: str = "Global") -> dict[str, Any]:
-    dataset = load_dataset()
-    match = next((entry for entry in dataset["regions"] if entry["name"].lower() == region.lower()), None)
-    if not match:
+    data = load_dataset()
+    match = next((entry for entry in data.get("regions", []) if entry.get("name", "").lower() == region.lower()), None)
+    if match is None:
         raise HTTPException(status_code=404, detail=f"Region '{region}' not found.")
     return build_forecast(match)
 
@@ -305,3 +273,72 @@ if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

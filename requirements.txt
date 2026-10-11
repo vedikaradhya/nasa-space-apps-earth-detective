@@ -1,2 +1,179 @@
-fastapi==0.115.0
-uvicorn==0.32.1
+# Earth System Trend Detective
+
+A NASA Space Apps Challenge web app built to investigate climate signals and Earth-system trends. The project combines a Python FastAPI backend with a responsive frontend dashboard for exploring Earth-system disruption across regions.
+
+## Challenge alignment
+This project addresses the 2026 challenge theme: "Be an Earth System Trend Detective." It highlights how multiple climate signals interact across warming, cryosphere change, carbon forcing, vegetation stress, and extreme event risk.
+
+## Features
+- Interactive region selector
+- Temperature anomaly dashboard
+- Sea-ice extent tracking
+- Atmospheric CO2 monitoring
+- Vegetation health analysis
+- Fire risk and ocean heat signals
+- Region-to-region comparison view
+- Investigation narrative and forecast section
+- Action recommendations for climate adaptation planning
+
+## Stack
+- Backend: Python + FastAPI
+- Frontend: HTML, CSS, JavaScript
+- Data model: local Earth-system dataset representing realistic synthetic climate trends
+
+## Run locally
+1. Clone the repository.
+2. Create and activate a virtual environment:
+   ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate
+   ```
+3. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+4. Start the app:
+   ```bash
+   uvicorn main:app --reload --host 0.0.0.0 --port 8000
+   ```
+5. Open the browser at:
+   ```text
+   http://localhost:8000
+   ```
+
+## API endpoints
+- `GET /` — frontend dashboard
+- `GET /api/health` — service health check
+- `GET /api/regions` — available regions
+- `GET /api/trends?region=Global` — trend data for a region
+- `GET /api/compare?regions=Global,Arctic,Amazon` — multi-region comparative summary
+- `GET /api/forecast?region=Arctic` — scenario-based forecast
+
+## Notes
+This app is intentionally built as a polished, hackathon-ready MVP. It uses a realistic synthetic dataset that is easy to replace with NASA Earth observation data, remote sensing APIs, or a CSV-based ingestion layer in a future version.
+
+## Potential next steps
+- Integrate real NASA Earth Observatory / MODIS / NOAA data
+- Add map-based geospatial visualizations
+- Add upload/import support for local climate datasets
+- Build a story-driven demo for judges and presentations
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

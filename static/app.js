@@ -1,16 +1,16 @@
 :root {
-  --bg: #07131f;
+  --bg: #061621;
   --panel: rgba(13, 29, 42, 0.95);
-  --panel-strong: rgba(18, 37, 52, 0.98);
+  --panel-strong: rgba(18, 39, 55, 0.98);
   --line: rgba(148, 163, 184, 0.28);
-  --text: #edf6ff;
-  --muted: #a7bbd6;
+  --text: #ebf6ff;
+  --muted: #a9bfd6;
   --accent: #52d5c4;
   --accent-2: #6ecbff;
   --warning: #ffbf69;
   --danger: #ff7b7b;
   --success: #8ae28f;
-  --shadow: rgba(2, 6, 23, 0.35);
+  --shadow: rgba(2, 6, 23, 0.38);
 }
 
 * {
@@ -470,3 +470,33 @@ svg {
     grid-column: auto;
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
