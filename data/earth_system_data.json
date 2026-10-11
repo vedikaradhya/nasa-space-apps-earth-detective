@@ -1,0 +1,119 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Any
+
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+
+BASE_DIR = Path(__file__).resolve().parent
+DATA_FILE = BASE_DIR / "data" / "earth_system_data.json"
+STATIC_DIR = BASE_DIR / "static"
+
+app = FastAPI(
+    title="Earth System Trend Detective",
+    version="1.0.0",
+    description="NASA Space Apps Challenge dashboard for exploring Earth system trends.",
+)
+
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
+
+def load_dataset() -> dict[str, Any]:
+    with DATA_FILE.open("r", encoding="utf-8") as file:
+        return json.load(file)
+
+
+def compute_change(series: list[float]) -> float:
+    if len(series) < 2:
+        return 0.0
+    return round(series[-1] - series[0], 3)
+
+
+def build_summary(region_data: dict[str, Any]) -> list[dict[str, str]]:
+    temp_change = compute_change(region_data["temperature_anomaly"])
+    ice_change = compute_change(region_data["sea_ice_extent"])
+    co2_change = compute_change(region_data["co2_ppm"])
+    veg_change = compute_change(region_data["vegetation_index"])
+    fire_change = compute_change(region_data["fire_risk"])
+
+    return [
+        {
+            "title": "Temperature signal",
+            "value": f"{temp_change:+.2f}°C",
+            "detail": "Long-term warming signal detected over the observed period.",
+        },
+        {
+            "title": "Sea ice trend",
+            "value": f"{ice_change:+.1f}%",
+            "detail": "Ice extent is shifting significantly from the beginning to the end of the record.",
+        },
+        {
+            "title": "Atmospheric CO2",
+            "value": f"{co2_change:+.1f} ppm",
+            "detail": "Greenhouse gas concentration continues to rise in the atmosphere.",
+        },
+        {
+            "title": "Vegetation health",
+            "value": f"{veg_change:+.1f} index",
+            "detail": "Land productivity and vegetation response show a notable trend.",
+        },
+        {
+            "title": "Fire risk index",
+            "value": f"{fire_change:+.2f}",
+            "detail": "Compound climate stress may be elevating the risk of fire conditions.",
+        },
+    ]
+
+
+@app.get("/")
+async def index() -> FileResponse:
+    return FileResponse(STATIC_DIR / "index.html")
+
+
+@app.get("/api/health")
+async def health() -> dict[str, str]:
+    return {"status": "ok", "service": "earth-system-trend-detective"}
+
+
+@app.get("/api/trends")
+async def get_trends(region: str = "Global") -> dict[str, Any]:
+    dataset = load_dataset()
+    region_name = region.strip()
+
+    target_region = next(
+        (entry for entry in dataset["regions"] if entry["name"].lower() == region_name.lower()),
+        None,
+    )
+
+    if target_region is None:
+        raise HTTPException(status_code=404, detail=f"Region '{region_name}' not found.")
+
+    return {
+        "region": target_region["name"],
+        "years": dataset["years"],
+        "metrics": {
+            "temperature_anomaly": target_region["temperature_anomaly"],
+            "sea_ice_extent": target_region["sea_ice_extent"],
+            "co2_ppm": target_region["co2_ppm"],
+            "vegetation_index": target_region["vegetation_index"],
+            "fire_risk": target_region["fire_risk"],
+            "precipitation_anomaly": target_region["precipitation_anomaly"],
+        },
+        "insights": build_summary(target_region),
+        "available_regions": [entry["name"] for entry in dataset["regions"]],
+    }
+
+
+@app.get("/api/regions")
+async def get_regions() -> dict[str, list[str]]:
+    dataset = load_dataset()
+    return {"regions": [entry["name"] for entry in dataset["regions"]]}
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

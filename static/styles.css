@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Earth System Trend Detective</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">NASA Space Apps Challenge</p>
+          <h1>Earth System Trend Detective</h1>
+        </div>
+        <div class="controls">
+          <label for="regionSelect">Region</label>
+          <select id="regionSelect"></select>
+          <button id="analyzeBtn">Analyze</button>
+        </div>
+      </header>
+
+      <main>
+        <section class="hero panel">
+          <div>
+            <p class="section-tag">Mission briefing</p>
+            <h2 id="regionTitle">Global</h2>
+            <p id="summaryIntro">
+              Tracking Earth-system change patterns over time to identify coordinated climate signals.
+            </p>
+          </div>
+          <div class="signal-badge">
+            <span class="dot"></span>
+            <span id="signalStatus">Climate signal active</span>
+          </div>
+        </section>
+
+        <section id="summaryGrid" class="summary-grid"></section>
+
+        <section class="chart-grid">
+          <article class="panel chart-panel">
+            <div class="panel-head">
+              <h3>Temperature anomaly</h3>
+              <span>°C</span>
+            </div>
+            <div id="chart-temperature" class="chart"></div>
+          </article>
+
+          <article class="panel chart-panel">
+            <div class="panel-head">
+              <h3>Sea ice extent</h3>
+              <span>%</span>
+            </div>
+            <div id="chart-sea-ice" class="chart"></div>
+          </article>
+
+          <article class="panel chart-panel">
+            <div class="panel-head">
+              <h3>Atmospheric CO2</h3>
+              <span>ppm</span>
+            </div>
+            <div id="chart-co2" class="chart"></div>
+          </article>
+
+          <article class="panel chart-panel">
+            <div class="panel-head">
+              <h3>Vegetation index</h3>
+              <span>index</span>
+            </div>
+            <div id="chart-vegetation" class="chart"></div>
+          </article>
+        </section>
+
+        <section class="panel insights-panel">
+          <div class="panel-head">
+            <h3>Investigation notes</h3>
+          </div>
+          <ul id="insightsList" class="insights-list"></ul>
+        </section>
+      </main>
+    </div>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
