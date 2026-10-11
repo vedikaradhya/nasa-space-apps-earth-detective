@@ -4,6 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Earth System Trend Detective</title>
+    <meta
+      name="description"
+      content="A NASA Space Apps Challenge investigation dashboard for analyzing Earth-system climate trends and environmental risk."
+    />
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
@@ -20,62 +24,127 @@
         </div>
       </header>
 
+      <nav class="tabs" aria-label="Dashboard sections">
+        <button class="tab active" data-tab="overview">Overview</button>
+        <button class="tab" data-tab="compare">Compare</button>
+        <button class="tab" data-tab="report">Investigation Report</button>
+      </nav>
+
       <main>
-        <section class="hero panel">
-          <div>
-            <p class="section-tag">Mission briefing</p>
-            <h2 id="regionTitle">Global</h2>
-            <p id="summaryIntro">
-              Tracking Earth-system change patterns over time to identify coordinated climate signals.
-            </p>
-          </div>
-          <div class="signal-badge">
-            <span class="dot"></span>
-            <span id="signalStatus">Climate signal active</span>
-          </div>
+        <section id="overview" class="tab-panel active">
+          <section class="hero panel">
+            <div>
+              <p class="section-tag">Mission briefing</p>
+              <h2 id="regionTitle">Global</h2>
+              <p id="summaryIntro">
+                Tracking Earth-system change patterns over time to identify coordinated climate signals.
+              </p>
+            </div>
+            <div class="signal-badge">
+              <span class="dot"></span>
+              <span id="signalStatus">Climate signal active</span>
+            </div>
+          </section>
+
+          <section id="summaryGrid" class="summary-grid"></section>
+
+          <section class="chart-grid">
+            <article class="panel chart-panel">
+              <div class="panel-head">
+                <h3>Temperature anomaly</h3>
+                <span>°C</span>
+              </div>
+              <div id="chart-temperature" class="chart"></div>
+            </article>
+
+            <article class="panel chart-panel">
+              <div class="panel-head">
+                <h3>Sea ice extent</h3>
+                <span>%</span>
+              </div>
+              <div id="chart-sea-ice" class="chart"></div>
+            </article>
+
+            <article class="panel chart-panel">
+              <div class="panel-head">
+                <h3>Atmospheric CO2</h3>
+                <span>ppm</span>
+              </div>
+              <div id="chart-co2" class="chart"></div>
+            </article>
+
+            <article class="panel chart-panel">
+              <div class="panel-head">
+                <h3>Vegetation index</h3>
+                <span>index</span>
+              </div>
+              <div id="chart-vegetation" class="chart"></div>
+            </article>
+
+            <article class="panel chart-panel wide">
+              <div class="panel-head">
+                <h3>Ocean heat & methane pressure</h3>
+                <span>combined drivers</span>
+              </div>
+              <div id="chart-combined" class="chart"></div>
+            </article>
+
+            <article class="panel chart-panel wide">
+              <div class="panel-head">
+                <h3>Extreme event intensity</h3>
+                <span>events</span>
+              </div>
+              <div id="chart-extreme" class="chart"></div>
+            </article>
+          </section>
+
+          <section class="panel signal-panel">
+            <div class="panel-head">
+              <h3>Signal matrix</h3>
+            </div>
+            <div id="signalGrid" class="signal-grid"></div>
+          </section>
         </section>
 
-        <section id="summaryGrid" class="summary-grid"></section>
-
-        <section class="chart-grid">
-          <article class="panel chart-panel">
+        <section id="compare" class="tab-panel">
+          <section class="panel compare-panel">
             <div class="panel-head">
-              <h3>Temperature anomaly</h3>
-              <span>°C</span>
+              <h3>Cross-region comparison</h3>
+              <button id="compareBtn" class="secondary-btn">Compare selected regions</button>
             </div>
-            <div id="chart-temperature" class="chart"></div>
-          </article>
-
-          <article class="panel chart-panel">
-            <div class="panel-head">
-              <h3>Sea ice extent</h3>
-              <span>%</span>
+            <div class="compare-inputs">
+              <label for="compareRegions">Regions</label>
+              <input id="compareRegions" type="text" value="Global,Arctic,Amazon" />
             </div>
-            <div id="chart-sea-ice" class="chart"></div>
-          </article>
-
-          <article class="panel chart-panel">
-            <div class="panel-head">
-              <h3>Atmospheric CO2</h3>
-              <span>ppm</span>
-            </div>
-            <div id="chart-co2" class="chart"></div>
-          </article>
-
-          <article class="panel chart-panel">
-            <div class="panel-head">
-              <h3>Vegetation index</h3>
-              <span>index</span>
-            </div>
-            <div id="chart-vegetation" class="chart"></div>
-          </article>
+            <div id="compareGrid" class="compare-grid"></div>
+          </section>
         </section>
 
-        <section class="panel insights-panel">
-          <div class="panel-head">
-            <h3>Investigation notes</h3>
-          </div>
-          <ul id="insightsList" class="insights-list"></ul>
+        <section id="report" class="tab-panel">
+          <section class="panel report-panel">
+            <div class="panel-head">
+              <h3>Investigation report</h3>
+            </div>
+            <div class="report-grid">
+              <article class="story-card">
+                <p class="section-tag">Narrative</p>
+                <h3 id="storyHeadline">System pressure is rising.</h3>
+                <p id="storyNarrative"></p>
+                <p id="storyInsight" class="muted"></p>
+              </article>
+
+              <article class="story-card">
+                <p class="section-tag">Forecast</p>
+                <h3 id="forecastScenario">warming acceleration</h3>
+                <ul id="forecastList" class="forecast-list"></ul>
+              </article>
+
+              <article class="story-card">
+                <p class="section-tag">Action plan</p>
+                <ul id="recommendationList" class="recommendation-list"></ul>
+              </article>
+            </div>
+          </section>
         </section>
       </main>
     </div>
@@ -83,30 +152,3 @@
     <script src="/static/app.js"></script>
   </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
